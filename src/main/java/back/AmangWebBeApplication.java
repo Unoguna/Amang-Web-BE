@@ -1,4 +1,4 @@
-package back.amang_web_be;
+package back;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
