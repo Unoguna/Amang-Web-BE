@@ -22,6 +22,9 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String nickname; // 닉네임
 
+    @Column(unique = true)
+    private String apiKey; //API Key
+
     private String role = "USER"; // 권한 (USER / ADMIN)
 
     public User (String username, String password, String nickname) {

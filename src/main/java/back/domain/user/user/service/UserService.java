@@ -7,21 +7,34 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
+    private final AuthTokenService authTokenService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     public User join(String username, String password, String nickname){
-        userRepository.findByUsername(username)
-                .ifPresent(_user -> {
-                    throw new ServiceException("409-1", "이미 존재하는 회원입니다.");
-                });
         password = passwordEncoder.encode(password);
 
         User user = new User(username, password, nickname);
 
         return userRepository.save(user);
+    }
+
+    public Optional<User> findByUsername(String username){
+        return userRepository.findByUsername(username);
+    }
+
+    public void checkPassword(User user, String password) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new ServiceException("401-1", "비밀번호가 일치 하지 않습니다.");
+        }
+    }
+
+    public String genAccessToken(User user) {
+        return authTokenService.genAccessToken(user);
     }
 }
