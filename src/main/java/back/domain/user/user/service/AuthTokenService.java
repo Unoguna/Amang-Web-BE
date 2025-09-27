@@ -14,6 +14,7 @@ public class AuthTokenService {
 
     @Value("${custom.accessToken.expireSeconds}")
     private int accessTokenExpireSeconds;
+
     public String genAccessToken(User user) {
         long id = user.getId();
         String username = user.getUsername();
