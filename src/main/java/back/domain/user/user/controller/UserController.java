@@ -15,10 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -74,6 +71,35 @@ public class UserController {
                         user.getApiKey(),
                         accessToken
                 )
+        );
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/me")
+    @Operation(summary = "내 정보")
+    public RsData<UserDto> me() {
+        User actor = rq.getActor();
+        // 실시간성을 보장하기위해 DB 조회
+        User member  = userService.findById(actor.getId()).get();
+
+        return new RsData(
+                "200-1",
+                "%s님 정보입니다.".formatted(actor.getNickname()),
+                new UserDto(member)
+        );
+    }
+
+    @Transactional
+    @DeleteMapping("/logout")
+    @Operation(summary = "로그아웃")
+    public RsData<Void> logout() {
+
+        rq.deleteCookie("apiKey");
+        rq.deleteCookie("accessToken");
+
+        return new RsData<>(
+                "200-1",
+                "로그아웃 되었습니다."
         );
     }
 }

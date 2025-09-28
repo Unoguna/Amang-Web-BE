@@ -28,4 +28,19 @@ public class AuthTokenService {
                 claims
         );
     }
+
+    Map<String, Object> payload(String assessToken) {
+        Map<String, Object> parsedPayload = Ut.jwt.payload(jwtSecretKey, assessToken);
+
+        if (parsedPayload == null) return null;
+
+        // 값이 Integer든 Long이든 Number로 받아서 longValue() 하면 공통적으로 처리 가능
+        long id = ((Number) parsedPayload.get("id")).longValue();
+
+        String username = (String) parsedPayload.get("username");
+
+        String nickname = (String) parsedPayload.get("nickname");
+
+        return Map.of("id", id, "username", username, "nickname", nickname);
+    }
 }

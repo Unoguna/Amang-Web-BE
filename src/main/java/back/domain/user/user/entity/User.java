@@ -5,6 +5,12 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -27,6 +33,12 @@ public class User extends BaseEntity {
 
     private String role = "USER"; // 권한 (USER / ADMIN)
 
+    public User (long id, String username, String nickname) {
+        this.id = id;
+        this.username = username;
+        this.nickname = nickname;
+    }
+
     public User (String username, String password, String nickname) {
         this.username = username;
         this.password = password;
@@ -36,5 +48,22 @@ public class User extends BaseEntity {
     public boolean isAdmin(){
         if(role.equals("ADMIN")) return true;
         else return false;
+    }
+
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return getAuthoritiesStringList()
+                .stream()
+                .map(SimpleGrantedAuthority::new)
+                .toList();
+    }
+
+    public List<String> getAuthoritiesStringList() {
+        List<String> authorities = new ArrayList<>();
+
+        if (isAdmin()) {
+            authorities.add("ROLE_ADMIN");
+        }
+
+        return authorities;
     }
 }

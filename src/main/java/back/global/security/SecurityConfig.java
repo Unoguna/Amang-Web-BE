@@ -1,32 +1,85 @@
 package back.global.security;
 
+import back.global.rsData.RsData;
+import back.standard.util.Ut;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @RequiredArgsConstructor
 public class SecurityConfig {
+    private final CustomAuthenticationFilter customAuthenticationFilter;
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        // Swagger 관련 요청은 인증 없이 허용
-                        .requestMatchers(
-                                "/v3/api-docs/**",
-                                "/swagger-ui/**",
-                                "/swagger-ui.html"
-                        ).permitAll()
-                        // 그 외 요청은 인증 필요
-                        .anyRequest().authenticated()
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http.authorizeHttpRequests(
+                        auth -> auth
+                                .requestMatchers("favicon.ico").permitAll()
+                                .requestMatchers("/h2-console/**").permitAll()
+                                // 게시글 다건 단건, 댓글 다건 단건 요청 권한을 전체 허용하겠다.
+                                // \\d+ -> 숫자가 한 자리 이상 연속된 것 (ex. 1, 23, 123)
+                                .requestMatchers(HttpMethod.GET, "/api/*/posts/{id:\\d+}",
+                                        "/api/*/posts", "/api/*/posts/{postId:\\d+}/comments",
+                                        "/api/*/posts/{postId:\\d+}/comments/{id:\\d+}").permitAll()
+                                .requestMatchers("/api/*/members/login", "/api/*/members/logout").permitAll()
+                                .requestMatchers(HttpMethod.POST, "/api/*/members").permitAll()
+                                .requestMatchers("/api/*/adm/**").hasRole("ADMIN") // 관리자 권한 체크(선언적으로 인가 처리)
+                                .requestMatchers("/api/*/**").authenticated()
+                                .anyRequest().permitAll()
                 )
-                // 기본 로그인 폼 비활성화
-                .formLogin(form -> form.disable());
+                .headers(
+                        headers -> headers
+                                .frameOptions(
+                                        HeadersConfigurer.FrameOptionsConfig::sameOrigin
+                                )
+                )
+                .csrf(AbstractHttpConfigurer::disable) // csrf 보호기능 비활성화
+                .formLogin(AbstractHttpConfigurer::disable) // 기본 로그인 폼 비활성
+                .logout(AbstractHttpConfigurer::disable) // 로그아웃 기능 비활성화
+                .httpBasic(AbstractHttpConfigurer::disable) // HTTP Basic 인증 비활성화
+                .sessionManagement(AbstractHttpConfigurer::disable) // 세션 관리 비활성화
+                .addFilterBefore(customAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(
+                        exceptionHandling -> exceptionHandling
+                                .authenticationEntryPoint(
+                                        (request, response, authException) -> {
+                                            response.setContentType("application/json;charset=UTF-8");
 
+                                            response.setStatus(401);
+                                            response.getWriter().write(
+                                                    Ut.json.toString(
+                                                            new RsData<Void>(
+                                                                    "401-1",
+                                                                    "로그인 후 이용해주세요."
+                                                            )
+                                                    )
+                                            );
+                                        }
+                                )
+                                .accessDeniedHandler(
+                                        (request, response, accessDeniedException) -> {
+                                            response.setContentType("application/json;charset=UTF-8");
+
+                                            response.setStatus(403);
+                                            response.getWriter().write(
+                                                    Ut.json.toString(
+                                                            new RsData<Void>(
+                                                                    "403-1",
+                                                                    "권한이 없습니다."
+                                                            )
+                                                    )
+                                            );
+                                        }
+                                )
+                );
         return http.build();
     }
+
 }

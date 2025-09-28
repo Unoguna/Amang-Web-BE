@@ -1,10 +1,12 @@
 package back.standard.util;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ClaimsBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
+import javax.crypto.SecretKey;
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
@@ -34,5 +36,37 @@ public class Ut {
 
             return jwt;
         }
+
+        public static Map<String, Object> payload (String secret, String jwtStr) {
+            SecretKey secretKey = Keys.hmacShaKeyFor(secret.getBytes());
+
+            try {
+                return (Map<String, Object>) Jwts
+                        .parser()
+                        .verifyWith(secretKey)
+                        .build()
+                        .parse(jwtStr)
+                        .getPayload();
+            } catch (Exception e) {
+                return null;
+            }
+        }
     }
+
+    public static class json {
+        public static ObjectMapper objectMapper;
+
+        public static String toString(Object object) {
+            return toString(object, null);
+        }
+
+        public static String toString(Object object, String defaultValue) {
+            try {
+                return objectMapper.writeValueAsString(object);
+            } catch (Exception e) {
+                return defaultValue;
+            }
+        }
+    }
+
 }

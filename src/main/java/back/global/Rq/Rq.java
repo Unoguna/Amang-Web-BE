@@ -1,10 +1,17 @@
 package back.global.Rq;
 
+import back.domain.user.user.entity.User;
+import back.global.security.SecurityUser;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
@@ -30,5 +37,56 @@ public class Rq {
         }
 
         resp.addCookie(cookie);
+    }
+
+    public User getActor() {
+        return Optional.ofNullable(
+                        SecurityContextHolder
+                                .getContext()
+                                .getAuthentication()
+                )
+                .map(Authentication::getPrincipal)
+                .filter(principal -> principal instanceof SecurityUser)
+                .map(principal -> (SecurityUser) principal)
+                .map(securityUser -> new User(
+                        securityUser.getId(),
+                        securityUser.getUsername(),
+                        securityUser.getNickname()
+                ))
+                .orElse(null);
+    }
+
+    public void deleteCookie(String name) {
+        setCookie(name, null);
+    }
+
+    public void setHeader(String name, String value) {
+        if (value == null) value = "";
+
+        if (value.isBlank()) {
+            req.removeAttribute(name);
+        } else {
+            resp.setHeader(name, value);
+        }
+    }
+
+    public String getHeader(String name, String defaultValue) {
+        return Optional
+                .ofNullable(req.getHeader("Authorization"))
+                .filter(headerValue -> !headerValue.isBlank())
+                .orElse(defaultValue);
+    }
+
+    public String getCookieValue(String name, String defaultValue) {
+        return Optional
+                .ofNullable(req.getCookies())
+                .flatMap(
+                        cookies ->
+                                Arrays.stream(req.getCookies())
+                                        .filter(cookie -> name.equals(cookie.getName()))
+                                        .map(Cookie::getValue)
+                                        .findFirst()
+                )
+                .orElse(defaultValue);
     }
 }

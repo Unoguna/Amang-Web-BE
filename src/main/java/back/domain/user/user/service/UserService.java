@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -36,5 +37,17 @@ public class UserService {
 
     public String genAccessToken(User user) {
         return authTokenService.genAccessToken(user);
+    }
+
+    public Optional<User> findById(long id) {
+        return  userRepository.findById(id);
+    }
+
+    public Optional<User> findByApiKey(String apiKey) {
+        return userRepository.findByApiKey(apiKey);
+    }
+
+    public Map<String, Object> payload(String accessToken) {
+        return authTokenService.payload(accessToken);
     }
 }
