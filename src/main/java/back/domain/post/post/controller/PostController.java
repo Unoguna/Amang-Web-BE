@@ -84,9 +84,10 @@ public class PostController {
         User actor = rq.getActor();
 
         Post post = postService.findById(id);
-        postService.update(post, reqBody.title(), reqBody.content());
 
         post.checkActorCanModify(actor);
+
+        postService.update(post, reqBody.title(), reqBody.content());
 
         return new RsData<>(
                 "200-1",
