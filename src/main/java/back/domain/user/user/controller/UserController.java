@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
-@Tag(name="ApiV1MemberController", description = "API 맴버 컨트롤러")
+@Tag(name="UserController", description = "API 유저 컨트롤러")
 @SecurityRequirement(name = "bearerAuth")
 public class UserController {
     private final UserService userService;
